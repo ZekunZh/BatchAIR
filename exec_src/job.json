@@ -1,0 +1,20 @@
+{
+    "properties": {
+        "nodeCount": 1,
+        "customToolkitSettings": {
+            "commandLine": "Rscript --vanilla $AZ_BATCHAI_INPUT_SCRIPT/cifar_cnn_dev.R",
+            "commandLineArgs": "32"
+        },
+        "stdOutErrPathPrefix": "$AZ_BATCHAI_MOUNT_ROOT/external",
+        "inputDirectories": [{
+            "id": "SCRIPT",
+            "path": "$AZ_BATCHAI_MOUNT_ROOT/external"
+        }],
+        "containerSettings": {
+            "shmSize": "16gb",
+            "imageSourceRegistry": {
+                "image": "angusrtaylor/batchair:latest"
+            }
+        }
+    }
+}
