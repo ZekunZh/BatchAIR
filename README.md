@@ -61,12 +61,17 @@ az storage file upload -s scripts --source R/mnist_cnn.R --path R --account-name
 - Create Batch AI workspace and experiment
 ```
 az batchai workspace create -l eastus -g <rg-name> -n <workspace-name>
+az batchai experiment create -g batchair -w batchairws -n experiment1
 ```
 - Create a Batch AI cluster, specifying te admin username and password for each cluster VM, setting the VM image and size and the number of minimum and maximum number of nodes (for cluster auto-scaling).
     ```
-    az batchai cluster create -g <rg-name> -w <workspace-name> -n <cluster-name> --user-name <user> --password <password> --image UbuntuLTS --vm-size Standard_NC6 --max 4 --min 4 --use-auto-storage
+    az batchai cluster create -g batchair -w batchairws -n batchaircluster --user-name <user> --password <password> --image UbuntuLTS --vm-size Standard_NC6 --max 4 --min 4
     ```
 Note: you eed to check that you have enough cores quota for your VM size. To check this, go to the Azure portal and search for *Batch AI* in *All services*. Look at your core quotas for your subscription and region in *Usage + quotas*.
+- Submit job on cluster
+```
+az batchai job create -c batchaircluster -n test1 -g batchair -w batchairws -e experiment1 -f job.json --storage-account-name batchairsa
+```
 
 ### 2. Prepare docker image
 ```

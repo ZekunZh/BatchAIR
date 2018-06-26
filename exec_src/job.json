@@ -3,8 +3,7 @@
     "properties": {
         "nodeCount": 1,
         "customToolkitSettings": {
-            "commandLine": "Rscript --vanilla $AZ_BATCHAI_INPUT_SCRIPT/cifar_cnn.R",
-            "commandLineArgs": "32"
+            "commandLine": "Rscript --vanilla $AZ_BATCHAI_JOB_MOUNT_ROOT/scripts/R/mnist_cnn.R 32"
         },
         "stdOutErrPathPrefix": "$AZ_BATCHAI_JOB_MOUNT_ROOT/logs",
         "mountVolumes": {
@@ -15,7 +14,7 @@
                 },
                 {
                     "azureFileUrl": "https://batchairsa.file.core.windows.net/scripts",
-                    "relativeMountPath": "R"
+                    "relativeMountPath": "scripts"
                 }
             ]
         },
