@@ -88,6 +88,19 @@ You may need to log out and log back in again for changes to take effect. Instru
 cd batchair/docker/cpu
 docker build -t batchair .
 ```
+- If you need to adapt the docker image, make the required changes and rebuild. Upload to your own docker hub account with
+```
+docker login
+```
+- Test docker image with an interactive session with
+```
+docker run -it -v $(pwd)/R:/scripts batchair /bin/bash
+```
+
+
+
+
+
 - Download the mnist dataset
 ```
 CID="$(docker run -dit -v $(pwd)/R:/scripts angusrtaylor/batchair /bin/bash)"

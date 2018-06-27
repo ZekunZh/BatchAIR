@@ -1,9 +1,10 @@
 
 # add mlserver libraries to libPaths (for rstudio on dsvm)
-#.libPaths(c(.libPaths(), "/data/mlserver/9.2.1/libraries/RServer/"))
-#.libPaths()
+.libPaths(c(.libPaths(), "/data/mlserver/9.2.1/libraries/RServer/"))
+.libPaths()
 
 library(keras)
+library(argparse)
 
 # Data Preparation -----------------------------------------------------
 
@@ -12,9 +13,18 @@ num_classes <- 10
 epochs <- 1
 
 # get filter size param from script arguments
-args = commandArgs(trailingOnly = TRUE)
-filter_size = as.numeric(args[1])
-print(paste('filter_size', filter_size))
+#args = commandArgs(trailingOnly = TRUE)
+#filter_size = as.numeric(args[1])
+#print(paste('filter_size', filter_size))
+
+parser <- ArgumentParser()
+parser$add_argument("--conv1filters", type="integer", default=32,
+                    help="Number of filters in first convolutional layer")
+parser$add_argument("--conv2filters", type="integer", default=64,
+                    help="Number of filters in second convolutional layer")
+parser$add_argument("--denseunits", type="integer", default=128,
+                    help="Number of units in dense layer")
+args <- parser$parse_args()
 
 # Input image dimensions
 img_rows <- 28
@@ -48,13 +58,13 @@ y_test <- to_categorical(y_test, num_classes)
 
 # Define model
 model <- keras_model_sequential() %>%
-  layer_conv_2d(filters = filter_size, kernel_size = c(3,3), activation = 'relu',
+  layer_conv_2d(filters = args$conv1filters, kernel_size = c(3,3), activation = 'relu',
                 input_shape = input_shape) %>% 
-  layer_conv_2d(filters = 64, kernel_size = c(3,3), activation = 'relu') %>% 
+  layer_conv_2d(filters = args$conv2filters, kernel_size = c(3,3), activation = 'relu') %>% 
   layer_max_pooling_2d(pool_size = c(2, 2)) %>% 
   layer_dropout(rate = 0.25) %>% 
   layer_flatten() %>% 
-  layer_dense(units = 128, activation = 'relu') %>% 
+  layer_dense(units = args$denseunits, activation = 'relu') %>% 
   layer_dropout(rate = 0.5) %>% 
   layer_dense(units = num_classes, activation = 'softmax')
 
