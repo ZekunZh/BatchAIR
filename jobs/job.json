@@ -3,9 +3,15 @@
     "properties": {
         "nodeCount": 1,
         "customToolkitSettings": {
-            "commandLine": "Rscript --vanilla $AZ_BATCHAI_JOB_MOUNT_ROOT/scripts/R/mnist_cnn.R 32"
+            "commandLine": "Rscript $AZ_BATCHAI_JOB_MOUNT_ROOT/resources/R/mnist_cnn.R --datadir $AZ_BATCHAI_JOB_MOUNT_ROOT/resources/mnist --outputdir $AZ_BATCHAI_OUTPUT_ALL --conv1filters 32 --conv2filters 64 --denseunits 128"
         },
         "stdOutErrPathPrefix": "$AZ_BATCHAI_JOB_MOUNT_ROOT/logs",
+        "outputDirectories": [
+            {
+                "pathPrefix": "$AZ_BATCHAI_JOB_MOUNT_ROOT/output",
+                "id": "ALL"
+            }
+        ],
         "mountVolumes": {
             "azureFileShares": [
                 {
@@ -13,8 +19,12 @@
                     "relativeMountPath": "logs"
                 },
                 {
-                    "azureFileUrl": "https://batchairsa.file.core.windows.net/scripts",
-                    "relativeMountPath": "scripts"
+                    "azureFileUrl": "https://batchairsa.file.core.windows.net/resources",
+                    "relativeMountPath": "resources"
+                },
+                {
+                    "azureFileUrl": "https://batchairsa.file.core.windows.net/output",
+                    "relativeMountPath": "output"
                 }
             ]
         },

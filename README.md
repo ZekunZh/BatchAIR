@@ -45,18 +45,15 @@ az account set --subscription "<subscription-name>"
 ```
 az storage account create -n batchairsa --sku Standard_LRS -g batchair -l eastus
 ```
-- Create file share for scripts
-```
-az storage share create -n scripts --account-name batchairsa
-az storage directory create -n R -s scripts --account-name batchairsa
-```
-- Create file share for logs
+- Create file shares for scripts, dataset, outputs and logs. Upload training script and dataset
 ```
 az storage share create -n logs --account-name batchairsa
-```
-- Upload training script to file share
-```
-az storage file upload -s scripts --source R/mnist_cnn.R --path R --account-name batchairsa
+az storage share create -n resources --account-name batchairsa
+az storage share create -n output --account-name batchairsa
+az storage directory create -n R -s resources --account-name batchairsa
+az storage directory create -n mnist -s resources --account-name batchairsa
+az storage file upload -s resources --source R/mnist_cnn.R --path R --account-name batchairsa
+az storage file upload -s resources --source mnist/mnist.rds --path mnist --account-name batchairsa
 ```
 - Create Batch AI workspace and experiment
 ```
@@ -70,7 +67,7 @@ az batchai experiment create -g batchair -w batchairws -n experiment1
 Note: you eed to check that you have enough cores quota for your VM size. To check this, go to the Azure portal and search for *Batch AI* in *All services*. Look at your core quotas for your subscription and region in *Usage + quotas*.
 - Submit job on cluster
 ```
-az batchai job create -c batchaircluster -n test1 -g batchair -w batchairws -e experiment1 -f job.json --storage-account-name batchairsa
+az batchai job create -c batchaircluster -n <job-name> -g batchair -w batchairws -e experiment1 -f exec_src/job.json --storage-account-name batchairsa
 ```
 
 ### 2. Prepare docker image
@@ -95,6 +92,11 @@ docker login
 - Test docker image with an interactive session with
 ```
 docker run -it -v $(pwd)/R:/scripts batchair /bin/bash
+```
+- Tag image and push to docker hub
+```
+docker tag <image-id> <docker-user-name>/<tag>:<version>
+docker push <docker-user-name>/<tag>
 ```
 
 
