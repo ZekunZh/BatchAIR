@@ -90,9 +90,9 @@ docker build -t batchair .
 ```
 - Download the mnist dataset
 ```
-CID="$(docker run -dit -v BatchAIR/R:/scripts angusrtaylor/batchair /bin/bash)"
+CID="$(docker run -dit -v $(pwd)/R:/scripts angusrtaylor/batchair /bin/bash)"
 docker exec ${CID} Rscript --vanilla scripts/get_mnist.R
-docker cp ${CID}:mnist.rds BatchAIR/mnist/
+docker cp ${CID}:mnist.rds $(pwd)/mnist/
 docker stop ${CID}
 docker rm ${CID}
 ```
