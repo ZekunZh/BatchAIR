@@ -1,6 +1,0 @@
-conv1filters: 32
-conv2filters: 54
-denseunits: 128
-============
-   
-Test accuracy: 0.9797
