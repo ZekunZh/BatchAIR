@@ -32,3 +32,5 @@ RUN pip install tensorflow-gpu keras
 RUN mkdir /setup
 ADD . /setup
 RUN Rscript /setup/install_R_packages.R
+
+CMD /bin/bash
