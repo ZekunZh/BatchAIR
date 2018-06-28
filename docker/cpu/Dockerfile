@@ -1,13 +1,13 @@
-ARG cuda_version=9.0
-ARG cudnn_version=7
-FROM nvidia/cuda:${cuda_version}-cudnn${cudnn_version}-devel-ubuntu16.04
+FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     zlib1g-dev \
     libssl-dev \
     libssh2-1-dev \
-    libcurl4-openssl-dev
+    libcurl4-openssl-dev \
+    bzip2 \
+    build-essential
 
 # Install R
 
@@ -28,10 +28,10 @@ ENV PATH $CONDA_DIR/bin:$PATH
 RUN wget https://repo.continuum.io/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh && \
     /bin/bash Miniconda3-4.5.4-Linux-x86_64.sh -b -p /opt/conda
 
-# Install tensorflow (gpu version) and keras
+# Install tensorflow (cpu version) and keras
 
 ENV TENSORFLOW_PYTHON /opt/conda/bin/python
-RUN pip install tensorflow-gpu==1.8.0 keras==2.2.0
+RUN pip install tensorflow==1.8.0 keras==2.2.0
 
 # Install additional R packages
 
