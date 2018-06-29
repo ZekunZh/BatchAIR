@@ -1,37 +1,37 @@
 {
-    "$schema": "https://raw.githubusercontent.com/Azure/BatchAI/master/schemas/2018-05-01/job.json",
-    "properties": {
-        "nodeCount": 1,
-        "customToolkitSettings": {
-            "commandLine": "Rscript $AZ_BATCHAI_JOB_MOUNT_ROOT/resources/R/mnist_cnn.R --datadir $AZ_BATCHAI_JOB_MOUNT_ROOT/resources/mnist --outputdir $AZ_BATCHAI_OUTPUT_ALL --conv1filters 32 --conv2filters 64 --denseunits 128"
+  "$schema": "https://raw.githubusercontent.com/Azure/BatchAI/master/schemas/2018-05-01/job.json",
+  "properties": {
+    "nodeCount": 1,
+    "customToolkitSettings": {
+      "commandLine": "Rscript $AZ_BATCHAI_JOB_MOUNT_ROOT/resources/R/mnist_cnn.R --datadir $AZ_BATCHAI_JOB_MOUNT_ROOT/resources/mnist --outputdir $AZ_BATCHAI_OUTPUT_ALL --conv1filters %s --conv2filters %s --denseunits %s"
+    },
+    "stdOutErrPathPrefix": "$AZ_BATCHAI_JOB_MOUNT_ROOT/logs",
+    "outputDirectories": [
+      {
+        "pathPrefix": "$AZ_BATCHAI_JOB_MOUNT_ROOT/output",
+        "id": "ALL"
+      }
+    ],
+    "mountVolumes": {
+      "azureFileShares": [
+        {
+          "azureFileUrl": "https://batchairsa.file.core.windows.net/logs",
+          "relativeMountPath": "logs"
         },
-        "stdOutErrPathPrefix": "$AZ_BATCHAI_JOB_MOUNT_ROOT/logs",
-        "outputDirectories": [
-            {
-                "pathPrefix": "$AZ_BATCHAI_JOB_MOUNT_ROOT/output",
-                "id": "ALL"
-            }
-        ],
-        "mountVolumes": {
-            "azureFileShares": [
-                {
-                    "azureFileUrl": "https://batchairsa.file.core.windows.net/logs",
-                    "relativeMountPath": "logs"
-                },
-                {
-                    "azureFileUrl": "https://batchairsa.file.core.windows.net/resources",
-                    "relativeMountPath": "resources"
-                },
-                {
-                    "azureFileUrl": "https://batchairsa.file.core.windows.net/output",
-                    "relativeMountPath": "output"
-                }
-            ]
+        {
+          "azureFileUrl": "https://batchairsa.file.core.windows.net/resources",
+          "relativeMountPath": "resources"
         },
-        "containerSettings": {
-            "imageSourceRegistry": {
-                "image": "angusrtaylor/batchair:latest"
-            }
+        {
+          "azureFileUrl": "https://batchairsa.file.core.windows.net/output",
+          "relativeMountPath": "output"
         }
+      ]
+    },
+    "containerSettings": {
+      "imageSourceRegistry": {
+        "image": "angusrtaylor/batchair:latest"
+      }
     }
+  }
 }
