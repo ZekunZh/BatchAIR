@@ -5,12 +5,13 @@
 
 library(keras)
 library(argparse)
+library(jsonlite)
 
 # Data Preparation -----------------------------------------------------
 
 batch_size <- 128
 num_classes <- 10
-epochs <- 1
+epochs <- 12
 
 
 parser <- ArgumentParser()
@@ -99,13 +100,12 @@ scores <- model %>% evaluate(
 cat('Test loss:', scores[[1]], '\n')
 cat('Test accuracy:', scores[[2]], '\n')
 
-fileConn<-file(file.path(args$outputdir, "results.txt"))
-writeLines(c(
-  paste("conv1filters:", args$conv1filters),
-  paste("conv2filters:", args$conv2filters),
-  paste("denseunits:", args$denseunits),
-  "============",
-  "   ",
-  paste("Test accuracy:", scores[[2]])
-), fileConn)
-close(fileConn)
+output <- data.frame(
+  conv1filters = args$conv1filters,
+  conv2filters = args$conv2filters,
+  denseunits = args$denseunits,
+  test_accuracy = scores[[2]]
+)
+print(output)
+
+write_json(output, path = file.path(args$outputdir, 'output.json'))
