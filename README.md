@@ -1,120 +1,133 @@
 # Deep Learning with R on Azure Batch AI
 
-Examples of how to use Azure Batch AI for deep learning models implemented in Keras for R. Examples include:
+An example of how to use Azure [Batch AI](https://azure.microsoft.com/services/batch-ai/) to perform distributed hyperparameter tuning of a model implemented in [Keras for R](https://keras.rstudio.com/).
 
-- distributed hyperparameter tuning
-- distributed batch scoring (to follow)
-- distributed training (to follow)
+The example adapts the mnist_cnn.R example script to test different network structures. An R script defines the set of hyperparameters to be tested and generates a series of job configuration files to be run on a Batch AI cluster. The script runs a triggers a Batch AI job for each hyperparameter set through the Azure CLI before retrieving the output from each job and identifying the optimum hyperparameter set.
 
 ## Pre-requisites
 
 You will need the following to run these examples:
 - an [Azure subscription](https://azure.microsoft.com/en-gb/free/search/?OCID=AID631183_SEM_6SWb2WFu&dclid=CJuhw5yo4tsCFZFh0wodQ3oLEg)
+- an Ubuntu Server 16.04 LTS Virtual Machine or an Ubuntu Data Science Virtual Machine (search for these the [Azure portal](https://portal.azure.com/))
+- [docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#supported-storage-drivers) (this is already installed on the DSVM)
+- [nvidia-docker](https://github.com/NVIDIA/nvidia-docker) if your VM has GPU attached (already installed on GPU-enabled DSVMs)
 
 ## Setup instructions
 
-### 1. Create DLVM
+### 1. Clone repository
+- ssh into the Ubuntu VM and clone the repository
 
-Follow these instructions to create an [Ubuntu Data Learning Virtual Machine](https://azuremarketplace.microsoft.com/marketplace/apps/microsoft-ads.dsvm-deep-learning. This VM image comes with several pre-requisites pre-installed including Azure CLI, Azure Python SDK, docker, R, Anaconda, Keras and Tensorflow.
 
-- Go to the Azure [portal](https://ms.portal.azure.com/)
+    ```
+    git clone https://github.com/angusrtaylor/BatchAIR.git
+    cd BatchAIR
+    ```
 
-- Click *Create a resource* and search for Deep Learning Virtual Machine
+### 2. Pull docker image
 
-- Provision a Linux DLVM in East US region
+- Pull the docker image
 
-### 2. Setup BatchAI Cluster
+    ```
+    docker pull angusrtaylor/kerasr
+    ```
+    Note: If your VM has a GPU attached, pull the angusrtaylor/kerasr-gpu image. Replace subsequent docker commands in these instructions with nvidia-docker.
 
-- In the DLVM terminal:
- 
+    This image contains all further pre-requisites for these instructions including:
+
+    - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
+    - R
+    - tensorflow
+    - keras (python library)
+    - keras (R library)
+
+    ##### Optional
+    If you want to execute docker without having to sudo each time then you need to run the following:
+    ```bash
+    sudo groupadd docker
+    sudo usermod -aG docker $USER
+    ```
+    You may need to log out and log back in again for changes to take effect. Instructions from https://docs.docker.com/engine/installation/linux/linux-postinstall/#manage-docker-as-a-non-root-user
+
 
 ### 2. Create BatchAI resources
-- Login to Azure
-```
-az login
-```
+
+- Start a docker container and run a bash session
+
+    ```
+    CID="$(docker run -v $(pwd):/BatchAIR -dit kerasr)"
+    docker exec -it ${CID} bash
+    cd BatchAIR
+    ```
+- Login to Azure using the Azure CLI
+    ```
+    az login
+    ```
 - List subscriptions
-```
-az account list -o table
-```
+    ```
+    az account list -o table
+    ```
 - Set subscription
-```
-az account set --subscription "<subscription-name>"
-```
+    ```
+    az account set --subscription "<subscription-name>"
+    ```
+- Set resources names (feel free to change these but be sure to adapt the job_template.json file if you do)
+    ```
+    BATCHAIR_RG=batchai
+    BATCHAIR_SA=batchairsa
+    BATCHAIR_WS=batchairws
+    BATCHAIR_CLUST=batchaicluster
+    ```
+
 - Create storage account
-```
-az storage account create -n batchairsa --sku Standard_LRS -g batchair -l eastus
-```
-- Create file shares for scripts, dataset, outputs and logs. Upload training script and dataset
-```
-az storage share create -n logs --account-name batchairsa
-az storage share create -n resources --account-name batchairsa
-az storage share create -n output --account-name batchairsa
-az storage directory create -n R -s resources --account-name batchairsa
-az storage directory create -n mnist -s resources --account-name batchairsa
-az storage file upload -s resources --source R/mnist_cnn.R --path R --account-name batchairsa
-az storage file upload -s resources --source mnist/mnist.rds --path mnist --account-name batchairsa
-```
-- Create Batch AI workspace and experiment
-```
-az batchai workspace create -l eastus -g <rg-name> -n <workspace-name>
-az batchai experiment create -g batchair -w batchairws -n experiment1
-```
+    ```
+    az storage account create -n ${BATCHAIR_SA} --sku Standard_LRS -g ${BATCHAIR_RG} -l eastus
+    ```
+
+    Note: Batch AI is currently only available in select regions. Here we select East US for all resources.
+
+- Create file shares for scripts, dataset, outputs and logs. Upload training script
+    ```
+    az storage share create -n logs --account-name ${BATCHAIR_RG}
+    az storage share create -n resources --account-name ${BATCHAIR_SA}
+    az storage share create -n output --account-name ${BATCHAIR_SA}
+    az storage directory create -n R -s resources --account-name ${BATCHAIR_SA}
+    az storage directory create -n mnist -s resources --account-name ${BATCHAIR_SA}
+    az storage file upload -s resources --source R/mnist_cnn.R --path R --account-name ${BATCHAIR_SA}
+    ```
+- Create Batch AI workspace
+    ```
+    az batchai workspace create -l eastus -g ${BATCHAIR_RG} -n ${BATCHAIR_WS}
+    ```
 - Create a Batch AI cluster, specifying te admin username and password for each cluster VM, setting the VM image and size and the number of minimum and maximum number of nodes (for cluster auto-scaling).
     ```
-    az batchai cluster create -g batchair -w batchairws -n batchaircluster --user-name <user> --password <password> --image UbuntuLTS --vm-size Standard_NC6 --max 4 --min 4
+    az batchai cluster create -g ${BATCHAIR_RG} -w ${BATCHAIR_WS} -n ${BATCHAIR_CLUST} --user-name <user> --password <password> --image UbuntuLTS --vm-size Standard_NC6 --max 4 --min 4
     ```
-Note: you eed to check that you have enough cores quota for your VM size. To check this, go to the Azure portal and search for *Batch AI* in *All services*. Look at your core quotas for your subscription and region in *Usage + quotas*.
-- Submit job on cluster
-```
-az batchai job create -c batchaircluster -n <job-name> -g batchair -w batchairws -e experiment1 -f exec_src/job.json --storage-account-name batchairsa
-```
+    Note: Examples will run much faster if you use a vm-size that has GPU (such as Standard_NC6).
+    
+    Also note: you need to check that you have enough cores quota for your VM size. To check this, go to the Azure portal and search for *Batch AI* in *All services*. Look at your core quotas for your subscription and region in *Usage + quotas*.
 
-### 2. Prepare docker image
-```
-##### Optional
-If you want to execute docker without having to sudo each time then you need to run the following:
-```bash
-sudo groupadd docker
-sudo usermod -aG docker $USER
-```
-You may need to log out and log back in again for changes to take effect. Instructions from https://docs.docker.com/engine/installation/linux/linux-postinstall/#manage-docker-as-a-non-root-user
+### 3. Download the MNIST dataset
 
-- Build the docker image:
-```
-cd batchair/docker/cpu
-docker build -t batchair .
-```
-- If you need to adapt the docker image, make the required changes and rebuild. Upload to your own docker hub account with
-```
-docker login
-```
-- Test docker image with an interactive session with
-```
-docker run -it -v $(pwd)/R:/scripts batchair /bin/bash
-```
-- Tag image and push to docker hub
-```
-docker tag <image-id> <docker-user-name>/<tag>:<version>
-docker push <docker-user-name>/<tag>
-```
+- Within your running the docker container, run
+    ```
+    Rscript R/get_mnist.R
+    ```
+- Upload data set to the file share
+    ```
+    az storage file upload -s resources --source mnist/mnist.rds --path mnist --account-name ${BATCHAIR_SA}
+    ```
 
+### 4. Run the hyperparameter tuning script
+- Run the grid_search.R script to perform the hyperparameter tuning
+    ```
+    Rscript R/grid_search.R --w ${BATCHAIR_WS} --c ${BATCHAIR_CLUST} --e <experiment-name> --g ${BATCHAIR_RG} --s ${BATCHAIR_SA} --gpu TRUE
+    ```
 
-
-
-
-- Download the mnist dataset
-```
-CID="$(docker run -dit -v $(pwd)/R:/scripts angusrtaylor/batchair /bin/bash)"
-docker exec ${CID} Rscript --vanilla scripts/get_mnist.R
-docker cp ${CID}:mnist.rds $(pwd)/mnist/
-docker stop ${CID}
-docker rm ${CID}
-```
-
+    Note: if not using a GPU cluster, set --gpu to FALSE.
+    
+    Also note: experiment-name must be unique.
 
 ## Useful links
 
 - [BatchAI github](https://github.com/Azure/BatchAI)
 - [RStudio Keras](https://keras.rstudio.com/index.html)
-- [Installing Docker on Ubuntu](https://docs.docker.com/install/linux/docker-ce/ubuntu/#supported-storage-drivers)
