@@ -7,7 +7,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssh2-1-dev \
     libcurl4-openssl-dev \
     bzip2 \
-    build-essential
+    build-essential \
+    ca-certificates \
+    curl \
+    lsb-release
+
+# Install Azure CLI
+
+RUN AZ_REPO=$(lsb_release -cs) && \
+    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | \
+        tee /etc/apt/sources.list.d/azure-cli.list && \
+    curl -L https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    apt-get install apt-transport-https && \
+    apt-get update && apt-get install azure-cli
 
 # Install R
 

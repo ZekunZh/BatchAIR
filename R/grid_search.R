@@ -1,13 +1,17 @@
 
+# Execute from BatchAIR directory
+
 # Set resource names (if running interactively)
 workspace <- "batchairws"
 cluster <- "batchaircluster"
-experiment <- "experiment7"
+experiment <- ""
 resourcegroup <- "batchair"
 storageaccount <- "batchairsa"
 gpu <- TRUE
 
+# add libraries path for running in R studio on Microsoft Data Science Virtual Machine
 .libPaths(c(.libPaths(), "/data/mlserver/9.2.1/libraries/RServer/"))
+
 library(jsonlite)
 library(argparse)
 
@@ -68,7 +72,7 @@ for (row in 1:nrow(param_grid)) {
   job <- job_temp
   job$properties$customToolkitSettings$commandLine <- cmd
   job$properties$containerSettings$imageSourceRegistry$image <- docker_img
-  write_json(job, path = paste0('jobs/job', row, '.json'), pretty = TRUE, auto_unbox = TRUE)
+  write_json(job, path = file.path('jobs', paste0('job', row, '.json')), pretty = TRUE, auto_unbox = TRUE)
   
 }
 
@@ -99,7 +103,7 @@ run_job <- function(job_file) {
             resourcegroup,
             workspace,
             experiment,
-            file.path('jobs',job_file),
+            file.path('jobs', job_file),
             storageaccount),
     wait = FALSE,
     ignore.stdout = TRUE
