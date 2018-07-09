@@ -30,7 +30,7 @@
     },
     "containerSettings": {
       "imageSourceRegistry": {
-        "image": "angusrtaylor/batchair:latest"
+        "image": "angusrtaylor/kerasr-gpu:latest"
       }
     }
   }
